@@ -20,6 +20,8 @@ COPY server/requirements.txt .
 
 RUN pip install --no-cache-dir -r requirements.txt
 
+RUN python -m spacy download en_core_web_lg
+
 COPY server/ .
 
 ENV FLASK_APP=app.py
