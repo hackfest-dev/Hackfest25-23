@@ -1,4 +1,3 @@
-
 import { useState } from 'react';
 import { useToast } from "@/components/ui/use-toast";
 import FileUploadZone from '@/components/FileUploadZone';
@@ -11,6 +10,7 @@ const Index = () => {
   const [files, setFiles] = useState<File[]>([]);
   const [method, setMethod] = useState('full_redact');
   const [replaceText, setReplaceText] = useState('[REDACTED]');
+  const [email, setEmail] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const { toast } = useToast();
 
@@ -26,6 +26,15 @@ const Index = () => {
       return;
     }
 
+    if (!email) {
+      toast({
+        variant: "destructive",
+        title: "Email required",
+        description: "Please enter your email address",
+      });
+      return;
+    }
+
     setIsLoading(true);
 
     try {
@@ -35,6 +44,7 @@ const Index = () => {
       });
       
       formData.append('method', method);
+      formData.append('email', email);
       if (method === 'replace') {
         formData.append('replace_text', replaceText);
       }
@@ -94,6 +104,18 @@ const Index = () => {
 
         <form onSubmit={handleSubmit} className="space-y-8">
           <div className="bg-card rounded-xl shadow-sm p-6 space-y-6 text-card-foreground">
+            <div className="space-y-4">
+              <h2 className="text-xl font-semibold text-foreground">Your Email</h2>
+              <Input
+                type="email"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                placeholder="Enter your email address"
+                className="max-w-md"
+                required
+              />
+            </div>
+
             <div className="space-y-4">
               <h2 className="text-xl font-semibold text-foreground">Upload Files</h2>
               <FileUploadZone files={files} onFileChange={setFiles} />
