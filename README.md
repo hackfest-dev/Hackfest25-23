@@ -1,153 +1,200 @@
-# Document Redaction System - HackFest 2024
+# RedactLy.AI
 
-A full-stack application for document redaction, built with modern web technologies. This system allows users to upload documents and apply various redaction methods to protect sensitive information.
+A document redaction system that helps protect sensitive information in your documents using AI-powered redaction techniques.
 
-## 🌟 Features
+## 🏗️ Architecture Overview
 
-- **Document Processing**
-  - Multiple file format support
-  - Drag-and-drop file upload
-  - Real-time preview
-  - Multiple redaction methods
+### Backend Architecture (server/)
 
-- **User Interface**
-  - Modern, responsive design
-  - Dark/Light theme support
-  - Intuitive user experience
-  - Real-time feedback with toast notifications
+The backend is built with Flask and consists of several key components:
 
-- **Backend Processing**
-  - Fast document processing
-  - Multiple redaction algorithms
-  - Secure file handling
-  - API rate limiting
+#### Core Components (`server/src/`)
 
-## 🏗️ Project Structure
+1. **app.py** - Main Application Entry Point
+   - Handles all HTTP routes and API endpoints
+   - Manages file uploads and document processing
+   - Implements email notifications
+   - Key endpoints:
+     - `/email/send` - Sends notification emails
+     - `/document/add` - Handles document uploads
+     - `/documents` - Lists all documents
+     - `/document/hash/<hash>` - Retrieves documents by hash
+     - `/structured` - Processes structured data
+     - `/redact` - Handles document redaction
 
-```
-HackFest2024/
-├── client/                 # Frontend React application
-│   ├── src/               # Source code
-│   │   ├── components/    # React components
-│   │   ├── hooks/        # Custom React hooks
-│   │   ├── pages/        # Page components
-│   │   └── lib/          # Utilities and configurations
-│   └── README.md         # Frontend documentation
-│
-├── server/                # Backend FastAPI application
-│   ├── app/              # Application code
-│   │   ├── api/          # API endpoints
-│   │   ├── core/         # Core functionality
-│   │   └── services/     # Business logic
-│   └── README.md         # Backend documentation
-│
-└── README.md             # This file
-```
+2. **redaction_service.py**
+   - Core redaction logic implementation
+   - Handles PDF processing and text extraction
+   - Manages redaction patterns and rules
+
+3. **ocr_redaction.py**
+   - OCR (Optical Character Recognition) implementation
+   - Processes scanned documents
+   - Extracts text from images within PDFs
+
+4. **ollamahandler.py**
+   - Integration with Ollama AI model
+   - Handles AI-powered text analysis
+   - Manages model interactions and responses
+
+5. **preprocessor.py**
+   - Document preprocessing utilities
+   - Text cleaning and normalization
+   - Format conversion helpers
+
+6. **auto_emailer.py**
+   - Email notification system
+   - Template management
+   - Email sending utilities
+
+7. **config.py**
+   - Configuration management
+   - Environment variables
+   - System settings
+
+8. **model.py**
+   - Database models
+   - Data structures
+   - Schema definitions
+
+#### Database Structure (`server/database/`)
+- SQLite database implementation
+- Document storage and retrieval
+- Hash management for documents
+
+#### Storage Directories
+- `temp_uploads/` - Temporary file storage
+- `document_storage/` - Permanent document storage
+
+### Frontend Architecture (client/)
+
+The frontend is built with React, TypeScript, and Vite, featuring a modern component-based architecture.
+
+#### Core Components (`client/src/`)
+
+1. **App.tsx** - Root Component
+   - Application routing
+   - Theme management
+   - Global state setup
+   - Toast notifications
+
+2. **Components Directory (`components/`)**
+   - Reusable UI components
+   - Theme toggle
+   - Form elements
+   - Layout components
+
+3. **Pages Directory (`pages/`)**
+   - Route-based components
+   - Main application views
+   - Error pages
+
+4. **Hooks Directory (`hooks/`)**
+   - Custom React hooks
+   - API integration hooks
+   - State management hooks
+
+5. **Types Directory (`types/`)**
+   - TypeScript type definitions
+   - Interface declarations
+   - Type utilities
+
+6. **Lib Directory (`lib/`)**
+   - Utility functions
+   - API clients
+   - Helper functions
 
 ## 🚀 Getting Started
 
 ### Prerequisites
+- Docker
+- Docker Compose
 
-- Node.js (v18 or higher)
-- Python (v3.8 or higher)
-- npm or yarn
-- pip
+### Running with Docker
 
-### Frontend Setup
+1. Clone the repository:
+```bash
+git clone [your-repo-url]
+cd Hackfest25-23
+```
 
-1. Navigate to the client directory:
-   ```bash
-   cd client
-   ```
+2. Start the application:
+```bash
+docker-compose up --build
+```
 
-2. Install dependencies:
-   ```bash
-   npm install
-   ```
+The application will be available at:
+- Frontend: http://localhost:5173
+- Backend API: http://localhost:5000
 
-3. Start the development server:
-   ```bash
-   npm run dev
-   ```
+## 📝 API Documentation
 
-### Backend Setup
+### Document Management
 
-1. Navigate to the server directory:
-   ```bash
-   cd server
-   ```
+1. **Upload Document**
+```bash
+POST /document/add
+Content-Type: multipart/form-data
+Body:
+  - file: PDF file
+  - email: user@example.com
+```
 
-2. Create and activate a virtual environment:
-   ```bash
-   python -m venv venv
-   source venv/bin/activate  # On Windows: .\venv\Scripts\activate
-   ```
+2. **List Documents**
+```bash
+GET /documents?email=user@example.com
+```
 
-3. Install dependencies:
-   ```bash
-   pip install -r requirements.txt
-   ```
+3. **Get Document by Hash**
+```bash
+GET /document/hash/<hash>
+```
 
-4. Start the server:
-   ```bash
-   uvicorn app.main:app --reload
-   ```
+4. **Process Document**
+```bash
+POST /redact
+Content-Type: multipart/form-data
+Body:
+  - files: PDF file(s)
+  - method: redaction method
+```
 
-## 🛠️ Tech Stack
+### Email Notifications
 
-### Frontend
-- React 18
-- TypeScript
-- Vite
-- Tailwind CSS
-- Shadcn UI Components
+```bash
+POST /email/send
+Content-Type: application/json
+Body:
+{
+  "email": "recipient@example.com",
+  "subject": "Document Verification",
+  "contents": "Please verify the redacted document"
+}
+```
 
-### Backend
-- FastAPI
-- Python
-- SQLAlchemy
-- Pydantic
-- Uvicorn
+## 🔐 Security Features
 
-## 📝 Development Guidelines
+- File upload validation
+- Secure file storage
+- Hash-based document retrieval
+- Rate limiting
+- CORS protection
+- Input sanitization
 
-1. **Code Style**
-   - Follow TypeScript/Python best practices
-   - Use meaningful variable and function names
-   - Add appropriate comments for complex logic
-   - Follow existing code formatting
+## 🛠️ Development Guidelines
 
-2. **Git Workflow**
-   - Create feature branches from main
-   - Use meaningful commit messages
-   - Submit pull requests for review
-   - Keep commits atomic and focused
+### Backend Development
+1. Follow PEP 8 style guide
+2. Add docstrings to all functions
+3. Implement error handling
+4. Write unit tests for new features
 
-3. **Testing**
-   - Write tests for new features
-   - Ensure all tests pass before submitting PR
-   - Include both unit and integration tests
-
-## 🔐 Security Considerations
-
-- All file uploads are validated
-- Sensitive data is properly redacted
-- API endpoints are rate-limited
-- Input validation on both frontend and backend
+### Frontend Development
+1. Use TypeScript for type safety
+2. Follow React best practices
+3. Implement responsive design
+4. Maintain component reusability
 
 ## 📄 License
 
-This project is licensed under the MIT License - see the LICENSE file for details.
-
-## 👥 Contributors
-
-- [Your Name/Team Name]
-- [Other Contributors]
-
-## 🙏 Acknowledgments
-
-- HackFest 2024 organizers
-- All contributors and supporters
-- Open source community
-
-curl -X POST -F "files=@Profile.pdf" -F "method=obfuscate"  http://localhost:5000/redact --output out.zip
+This project is licensed under the MIT License.
