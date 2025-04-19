@@ -1,2 +1,2 @@
-__all__ = ["config", "main", "ocr", "ollamahandler",
+__all__ = ["config", "ollamahandler",
            "preprocessor", "model", "ocr_redaction", "redaction_service"]

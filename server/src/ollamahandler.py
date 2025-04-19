@@ -2,7 +2,7 @@ import json
 import logging
 import time
 import ollama
-from src.config import SYSTEM_PROMPT, build_pii_prompt
+from src.config import SYSTEM_PROMPT
 from src.preprocessor import clean_llm_json_response, clean_empty_values
 
 logging.basicConfig(level=logging.DEBUG)
@@ -14,7 +14,6 @@ class OllamaClient:
         self.model = model
         self.messages = []
         self.update_chat("system", SYSTEM_PROMPT)
-        self.update_chat("system", build_pii_prompt())
 
     def update_chat(self, role: str, content: str):
         """Append a message to the conversation history."""
@@ -60,3 +59,44 @@ class OllamaClient:
                     logger.error(
                         "Max retries reached. Failed to get valid JSON.")
                     return None
+
+
+# def get_entities(text: str) -> list[str]:
+#     """
+#     Analyze text content using Ollama LLM and extract structured entity data.
+#     The expected output from Ollama is a JSON object with named entities.
+#     """
+#     try:
+#         client = OllamaClient()
+#         result = client.get_structured_data(text)
+
+#         output_list = []
+
+#         def flatten(value):
+#             if isinstance(value, list):
+#                 for v in value:
+#                     output_list.extend(flatten(v))
+#             elif isinstance(value, dict):
+#                 for v in value.values():
+#                     output_list.extend(flatten(v))
+#             elif isinstance(value, str):
+#                 return [value.strip()]
+#             return []
+
+#         if result and isinstance(result, dict):
+#             for val in result.values():
+#                 output_list.extend(flatten(val))
+
+#         # Remove duplicates while preserving order
+#         seen = set()
+#         unique_output = []
+#         for item in output_list:
+#             if item not in seen:
+#                 seen.add(item)
+#                 unique_output.append(item)
+
+#         return unique_output
+
+#     except Exception as e:
+#         print(f"Error during LLM entity extraction: {e}")
+#         return []
