@@ -9,6 +9,13 @@ services:
       - app-network
     extra_hosts:
       - "host.docker.internal:host-gateway"
+    depends_on:
+      - db
+    environment:
+      POSTGRES_HOST: db
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+      POSTGRES_DB: mydatabase
 
   client:
     build:
@@ -21,6 +28,23 @@ services:
     networks:
       - app-network
 
+  db:
+    image: postgres:15
+    restart: always
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+      POSTGRES_DB: mydatabase
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    networks:
+      - app-network
+    ports:
+      - "5432:5432"
+
 networks:
   app-network:
     driver: bridge
+
+volumes:
+  postgres_data:
