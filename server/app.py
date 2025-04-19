@@ -1,3 +1,4 @@
+import shutil
 from flask import Flask, jsonify, request, send_file
 from flask_cors import CORS
 from werkzeug.utils import secure_filename
@@ -235,55 +236,40 @@ def structured_data():
 
 @app.route('/redact', methods=['POST'])
 def redact_pdfs():
-    # Allow redacting by either document hashes or paths
-    if not request.json:
-        return jsonify({'error': 'Invalid request format'}), 400
-
-    if 'document_ids' not in request.json and 'document_paths' not in request.json:
-        return jsonify({'error': 'Either document_ids or document_paths must be provided'}), 400
-
-    # Get redaction parameters (with defaults)
-    method = request.json.get('method', 'full_redact')
-    replace_text = request.json.get('replace_text', '[REDACTED]')
-
-    # Validate method
-    if method not in ['full_redact', 'obfuscate', 'replace']:
-        return jsonify({'error': 'Invalid redaction method'}), 400
+    # Handle form data instead of JSON
+    method = request.form.get('method', 'full_redact')
+    replace_text = request.form.get('replace_text', '[REDACTED]')
+    email = request.form.get('email')
 
     # Create a unique session ID for this batch
     session_id = str(uuid.uuid4())
     session_folder = os.path.join(UPLOAD_FOLDER, session_id)
     os.makedirs(session_folder, exist_ok=True)
 
-    db = next(get_db())
     try:
-        # Get documents from database
-        processed_files = []
+        # Handle file uploads
+        if 'files' not in request.files:
+            return jsonify({'error': 'No files part in the request'}), 400
 
-        # Process by hash IDs if provided
-        if 'document_ids' in request.json and request.json['document_ids']:
-            for doc_id in request.json['document_ids']:
-                document = db.query(Document).filter(
-                    Document.hash == doc_id).first()
-                if not document:
-                    return jsonify({'error': f'Document with hash {doc_id} not found'}), 404
-                processed_files.append(document.path)
+        files = request.files.getlist('files')
+        if not files or len(files) == 0:
+            return jsonify({'error': 'No files selected'}), 400
 
-        # Process by paths if provided
-        if 'document_paths' in request.json and request.json['document_paths']:
-            for doc_path in request.json['document_paths']:
-                document = db.query(Document).filter(
-                    Document.path == doc_path).first()
-                if not document:
-                    return jsonify({'error': f'Document with path {doc_path} not found'}), 404
-                processed_files.append(document.path)
+        # Process uploaded files
+        uploaded_paths = []
+        for file in files:
+            if file and file.filename:
+                filename = secure_filename(file.filename)
+                file_path = os.path.join(session_folder, filename)
+                file.save(file_path)
+                uploaded_paths.append(file_path)
 
-        if not processed_files:
-            return jsonify({'error': 'No valid documents found for processing'}), 400
+        if not uploaded_paths:
+            return jsonify({'error': 'No valid files uploaded'}), 400
 
         # Process the batch of PDFs
         output_paths = process_pdf_redaction(
-            processed_files, session_folder, method, replace_text)
+            uploaded_paths, session_folder, method, replace_text)
 
         # Create a ZIP file with all redacted PDFs
         memory_file = io.BytesIO()
@@ -295,12 +281,16 @@ def redact_pdfs():
         memory_file.seek(0)
 
         # Clean up temporary files
+        for file_path in uploaded_paths:
+            if os.path.exists(file_path):
+                os.remove(file_path)
+
         for output_path in output_paths:
             if os.path.exists(output_path):
                 os.remove(output_path)
 
         if os.path.exists(session_folder):
-            os.rmdir(session_folder)
+            shutil.rmtree(session_folder)
 
         return send_file(
             memory_file,
@@ -312,10 +302,8 @@ def redact_pdfs():
     except Exception as e:
         # Clean up on error
         if os.path.exists(session_folder):
-            os.rmdir(session_folder)
-        return jsonify({'error': f'Error processing PDFs: {str(e)}'}), 500
-    finally:
-        db.close()
+            shutil.rmtree(session_folder)
+        return jsonify({'error': f'Error processing files: {str(e)}'}), 500
 
 
 if __name__ == '__main__':
