@@ -1,5 +1,5 @@
 from flask import Flask, jsonify
-
+from flask_cors import CORS 
 from src.main import process_file
 from flask import Flask, request, send_file, jsonify
 import os
@@ -10,7 +10,7 @@ import io
 from src.redaction_service import process_pdf_redaction
 
 app = Flask(__name__)
-
+CORS(app)
 
 @app.route("/api")
 def hello():
@@ -104,4 +104,4 @@ def redact_pdfs():
 
 
 if __name__ == '__main__':
-    app.run(debug=True)
+    app.run(host='0.0.0.0', port=5000, debug=True)
