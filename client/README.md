@@ -1,54 +1,95 @@
-# React + TypeScript + Vite
+# Document Redaction Client
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+This is the frontend application for the Document Redaction system, built with React, TypeScript, and Vite.
 
-Currently, two official plugins are available:
+## 🚀 Features
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Babel](https://babeljs.io/) for Fast Refresh
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/) for Fast Refresh
+- File upload and processing
+- Multiple redaction methods
+- Real-time preview
+- Dark/Light theme support
+- Toast notifications for user feedback
 
-## Expanding the ESLint configuration
+## 🛠️ Tech Stack
 
-If you are developing a production application, we recommend updating the configuration to enable type-aware lint rules:
+- React 18
+- TypeScript
+- Vite
+- Tailwind CSS
+- Shadcn UI Components
 
-```js
-export default tseslint.config({
-  extends: [
-    // Remove ...tseslint.configs.recommended and replace with this
-    ...tseslint.configs.recommendedTypeChecked,
-    // Alternatively, use this for stricter rules
-    ...tseslint.configs.strictTypeChecked,
-    // Optionally, add this for stylistic rules
-    ...tseslint.configs.stylisticTypeChecked,
-  ],
-  languageOptions: {
-    // other options...
-    parserOptions: {
-      project: ['./tsconfig.node.json', './tsconfig.app.json'],
-      tsconfigRootDir: import.meta.dirname,
-    },
-  },
-})
+## 📁 Project Structure
+
+```
+client/
+├── src/
+│   ├── components/         # Reusable UI components
+│   │   ├── ui/            # Base UI components
+│   │   ├── FileUploadZone.tsx
+│   │   ├── RedactionMethodSelect.tsx
+│   │   └── ThemeToggle.tsx
+│   ├── hooks/             # Custom React hooks
+│   │   └── use-toast.ts   # Toast notification hook
+│   ├── pages/             # Page components
+│   │   └── Index.tsx      # Main application page
+│   ├── lib/               # Utility functions and configurations
+│   ├── App.tsx            # Root component
+│   └── main.tsx           # Application entry point
 ```
 
-You can also install [eslint-plugin-react-x](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-x) and [eslint-plugin-react-dom](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-dom) for React-specific lint rules:
+## 🏗️ Components
 
-```js
-// eslint.config.js
-import reactX from 'eslint-plugin-react-x'
-import reactDom from 'eslint-plugin-react-dom'
+### FileUploadZone
+Handles file upload functionality with drag-and-drop support and file validation.
 
-export default tseslint.config({
-  plugins: {
-    // Add the react-x and react-dom plugins
-    'react-x': reactX,
-    'react-dom': reactDom,
-  },
-  rules: {
-    // other rules...
-    // Enable its recommended typescript rules
-    ...reactX.configs['recommended-typescript'].rules,
-    ...reactDom.configs.recommended.rules,
-  },
-})
-```
+### RedactionMethodSelect
+Provides interface for selecting different redaction methods for document processing.
+
+### ThemeToggle
+Controls the application's theme switching between light and dark modes.
+
+## 🚀 Getting Started
+
+1. Install dependencies:
+   ```bash
+   npm install
+   ```
+
+2. Start the development server:
+   ```bash
+   npm run dev
+   ```
+
+3. Build for production:
+   ```bash
+   npm run build
+   ```
+
+## 🔧 Available Scripts
+
+- `npm run dev` - Start development server
+- `npm run build` - Build for production
+- `npm run preview` - Preview production build
+- `npm run lint` - Run ESLint
+- `npm run type-check` - Run TypeScript type checking
+
+## 🎨 Styling
+
+The application uses Tailwind CSS for styling with a custom configuration. Theme customization can be done through the `tailwind.config.js` file.
+
+
+
+## 📝 Development Guidelines
+
+1. Follow TypeScript best practices
+2. Use functional components with hooks
+3. Implement proper error handling
+4. Add appropriate comments for complex logic
+5. Follow the existing code style and formatting
+
+## 🤝 Contributing
+
+1. Create a new branch for your feature
+2. Make your changes
+3. Submit a pull request
+
