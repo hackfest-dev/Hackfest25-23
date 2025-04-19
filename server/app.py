@@ -6,6 +6,7 @@ import os
 import uuid
 import io
 import zipfile
+import yagmail
 from database.dbhandler import hash_file
 from src.redaction_service import process_pdf_redaction
 from src.ocr_redaction import ocr_from_pdf
@@ -13,7 +14,14 @@ from src.ollamahandler import OllamaClient
 from database.models import get_db, Document
 
 app = Flask(__name__)
-CORS(app)
+# Configure CORS with more specific settings
+CORS(app, resources={
+    r"/*": {
+        "origins": "*",
+        "methods": ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
+        "allow_headers": ["Content-Type", "Authorization", "Access-Control-Allow-Credentials"]
+    }
+})
 
 UPLOAD_FOLDER = 'temp_uploads'
 STORAGE_FOLDER = 'document_storage'
@@ -24,6 +32,83 @@ os.makedirs(STORAGE_FOLDER, exist_ok=True)
 
 def allowed_file(filename):
     return '.' in filename and filename.rsplit('.', 1)[1].lower() in ALLOWED_EXTENSIONS
+
+
+def send_email(to_email, subject="Verify Access to Medical Records", contents="Kindly review and verify the redacted document before it is shared for research"):
+    """
+    Sends an email using Yagmail.
+    Parameters:
+        to_email: Recipient's email address.
+        subject: Subject of the email.
+        contents: Content of the email (can be HTML).
+    """
+    try:
+        # Initializing the server connection
+        yag = yagmail.SMTP(user='redactly.ai@gmail.com', password='dmzhqlwrqeuuianr')
+        
+        # Check if contents is HTML (contains HTML tags)
+        is_html = '<' in contents and '>' in contents
+        
+        # For debugging
+        print(f"Sending email to: {to_email}")
+        print(f"Subject: {subject}")
+        print(f"Is HTML: {is_html}")
+        
+        # Sending the email with proper content type
+        if is_html:
+            # Clean up any potential issues with the HTML content
+            # Remove any null bytes or other problematic characters
+            contents = contents.replace('\0', '')
+            
+            # Send as HTML
+            yag.send(to=to_email, subject=subject, contents=contents, html=True)
+        else:
+            # Send as plain text
+            yag.send(to=to_email, subject=subject, contents=contents)
+            
+        return {"status": "success", "message": "Email sent successfully"}
+    except Exception as e:
+        import traceback
+        error_details = traceback.format_exc()
+        print(f"Email error: {str(e)}")
+        print(f"Error details: {error_details}")
+        return {"status": "error", "message": f"Error sending email: {str(e)}"}
+
+
+@app.route('/email/send', methods=['POST', 'OPTIONS'])
+def send_notification_email():
+    # Handle preflight OPTIONS request
+    if request.method == 'OPTIONS':
+        response = jsonify({'status': 'ok'})
+        response.headers.add('Access-Control-Allow-Origin', '*')
+        response.headers.add('Access-Control-Allow-Headers', 'Content-Type,Authorization')
+        response.headers.add('Access-Control-Allow-Methods', 'POST,OPTIONS')
+        return response
+        
+    try:
+        data = request.json
+        
+        # Check for required fields
+        if not data or 'email' not in data:
+            return jsonify({'error': 'Email address is required'}), 400
+        
+        to_email = data['email']
+        subject = data.get('subject', "Verify Access to Medical Records")
+        contents = data.get('contents', "Kindly review and verify the redacted document before it is shared for research")
+        
+        # Send the email
+        result = send_email(to_email, subject, contents)
+        
+        if result['status'] == 'success':
+            return jsonify(result), 200
+        else:
+            return jsonify(result), 500
+    except Exception as e:
+        import traceback
+        error_details = traceback.format_exc()
+        print(f"API error: {str(e)}")
+        print(f"Error details: {error_details}")
+        return jsonify({'error': f"Server error: {str(e)}"}), 500
 
 
 @app.route('/document/add', methods=['POST'])

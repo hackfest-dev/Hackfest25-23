@@ -4,7 +4,7 @@ import FileUploadZone from "@/components/FileUploadZone";
 import RedactionMethodSelect from "@/components/RedactionMethodSelect";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Loader2, Plus, FileText, Download, Database } from "lucide-react";
+import { Loader2, Plus, FileText, Download, Database, Mail } from "lucide-react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Checkbox } from "@/components/ui/checkbox";
@@ -16,6 +16,15 @@ interface Document {
   hash: string | null;
   filename: string;
   processed: boolean;
+}
+
+interface StructuredResult {
+  path: string;
+  filename: string;
+  email: string;
+  hash: string;
+  structured_data: Record<string, unknown>;
+  error?: string;
 }
 
 const Index = () => {
@@ -37,7 +46,8 @@ const Index = () => {
 
   // State for structured data extraction
   const [isProcessingStructured, setIsProcessingStructured] = useState(false);
-  const [structuredResults, setStructuredResults] = useState<any[]>([]);
+  const [structuredResults, setStructuredResults] = useState<StructuredResult[]>([]);
+  const [isSendingEmail, setIsSendingEmail] = useState(false);
 
   const { toast } = useToast();
 
@@ -55,7 +65,15 @@ const Index = () => {
           )}`
         : "http://localhost:5000/documents";
 
-      const response = await fetch(url);
+      const response = await fetch(url, {
+        method: "GET",
+        headers: {
+          "Accept": "application/json",
+        },
+        mode: "cors",
+        credentials: "omit",
+      });
+      
       if (!response.ok) {
         throw new Error("Failed to fetch documents");
       }
@@ -108,6 +126,8 @@ const Index = () => {
 
         const response = await fetch("http://localhost:5000/document/add", {
           method: "POST",
+          mode: "cors",
+          credentials: "omit",
           body: formData,
         });
 
@@ -172,7 +192,10 @@ const Index = () => {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
+          "Accept": "application/json",
         },
+        mode: "cors",
+        credentials: "omit",
         body: JSON.stringify({
           document_paths: selectedDocuments,
         }),
@@ -242,7 +265,12 @@ const Index = () => {
         // Try to fetch the file using the hash if available
         if (doc.hash) {
           const response = await fetch(
-            `http://localhost:5000/document/hash/${doc.hash}`
+            `http://localhost:5000/document/hash/${doc.hash}`,
+            {
+              method: "GET",
+              mode: "cors",
+              credentials: "omit",
+            }
           );
           if (response.ok) {
             const blob = await response.blob();
@@ -262,6 +290,8 @@ const Index = () => {
 
       const response = await fetch("http://localhost:5000/redact", {
         method: "POST",
+        mode: "cors",
+        credentials: "omit",
         body: formData,
       });
 
@@ -302,6 +332,75 @@ const Index = () => {
       });
     } finally {
       setIsRedacting(false);
+    }
+  };
+
+  const handleSendEmail = async (email: string, filename: string) => {
+    setIsSendingEmail(true);
+    try {
+      // Clean up the filename by removing the UUID prefix if present
+      const cleanFilename = filename.replace(/^[a-f0-9-]+_/, '');
+      
+      // Format the email subject and content
+      const subject = `Document Verification Request: ${cleanFilename}`;
+      
+      // Use plain text instead of HTML
+      const contents = `
+Document Verification Request
+
+Hello,
+
+You have been requested to verify the following document:
+
+Document Name: ${cleanFilename}
+
+Please review this document and confirm that it can be shared for research purposes.
+
+If you have any questions or concerns, please contact the document administrator.
+
+---
+This is an automated message. Please do not reply to this email.
+      `;
+
+      console.log("Sending email to:", email);
+      console.log("Subject:", subject);
+      
+      const response = await fetch("http://localhost:5000/email/send", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "Accept": "application/json",
+        },
+        mode: "cors",
+        credentials: "omit",
+        body: JSON.stringify({
+          email,
+          subject,
+          contents,
+        }),
+      });
+
+      const responseData = await response.json();
+      
+      if (!response.ok) {
+        console.error("Email error response:", responseData);
+        throw new Error(responseData.error || "Failed to send email");
+      }
+
+      toast({
+        title: "Email Sent",
+        description: `Verification email sent to ${email}`,
+      });
+    } catch (err) {
+      console.error("Email error:", err);
+      toast({
+        variant: "destructive",
+        title: "Email Error",
+        description:
+          err instanceof Error ? err.message : "An unexpected error occurred",
+      });
+    } finally {
+      setIsSendingEmail(false);
     }
   };
 
@@ -421,9 +520,10 @@ const Index = () => {
                         />
                       </div>
                       <div className="flex-1 grid grid-cols-12 gap-4">
-                        <div className="col-span-5 font-medium">Filename</div>
-                        <div className="col-span-4 font-medium">Email</div>
+                        <div className="col-span-4 font-medium">Filename</div>
+                        <div className="col-span-3 font-medium">Email</div>
                         <div className="col-span-3 font-medium">Status</div>
+                        <div className="col-span-2 font-medium">Actions</div>
                       </div>
                     </div>
 
@@ -457,10 +557,10 @@ const Index = () => {
                               />
                             </div>
                             <div className="flex-1 grid grid-cols-12 gap-4">
-                              <div className="col-span-5 truncate">
+                              <div className="col-span-4 truncate">
                                 {doc.filename}
                               </div>
-                              <div className="col-span-4 truncate">
+                              <div className="col-span-3 truncate">
                                 {doc.email}
                               </div>
                               <div className="col-span-3">
@@ -473,6 +573,22 @@ const Index = () => {
                                     Pending
                                   </span>
                                 )}
+                              </div>
+                              <div className="col-span-2 flex justify-end">
+                                <Button
+                                  variant="outline"
+                                  size="sm"
+                                  onClick={() => handleSendEmail(doc.email, doc.filename)}
+                                  disabled={isSendingEmail}
+                                  className="h-8 w-8 p-0"
+                                  title="Send verification email"
+                                >
+                                  {isSendingEmail ? (
+                                    <Loader2 className="h-4 w-4 animate-spin" />
+                                  ) : (
+                                    <Mail className="h-4 w-4" />
+                                  )}
+                                </Button>
                               </div>
                             </div>
                           </div>
