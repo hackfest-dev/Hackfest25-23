@@ -54,17 +54,12 @@ def send_email(to_email, subject="Verify Access to Medical Records", contents="K
         print(f"Subject: {subject}")
         print(f"Is HTML: {is_html}")
         
-        # Sending the email with proper content type
-        if is_html:
-            # Clean up any potential issues with the HTML content
-            # Remove any null bytes or other problematic characters
-            contents = contents.replace('\0', '')
-            
-            # Send as HTML
-            yag.send(to=to_email, subject=subject, contents=contents, html=True)
-        else:
-            # Send as plain text
-            yag.send(to=to_email, subject=subject, contents=contents)
+        # Clean up any potential issues with the content
+        contents = contents.replace('\0', '')
+        
+        # Send the email - yagmail automatically detects HTML content
+        # and sends it appropriately without needing the html parameter
+        yag.send(to=to_email, subject=subject, contents=contents)
             
         return {"status": "success", "message": "Email sent successfully"}
     except Exception as e:

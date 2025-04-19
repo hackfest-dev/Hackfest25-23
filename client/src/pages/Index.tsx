@@ -344,23 +344,57 @@ const Index = () => {
       // Format the email subject and content
       const subject = `Document Verification Request: ${cleanFilename}`;
       
-      // Use plain text instead of HTML
+      // Create a properly formatted HTML email template with inline styles
+      // Email clients require inline styles and simple HTML structure
       const contents = `
-Document Verification Request
-
-Hello,
-
-You have been requested to verify the following document:
-
-Document Name: ${cleanFilename}
-
-Please review this document and confirm that it can be shared for research purposes.
-
-If you have any questions or concerns, please contact the document administrator.
-
----
-This is an automated message. Please do not reply to this email.
-      `;
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Document Verification Request</title>
+</head>
+<body style="font-family: 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; line-height: 1.6; color: #333; margin: 0; padding: 0; background-color: #f9fafb;">
+  <div style="max-width: 600px; margin: 30px auto; padding: 0; background-color: #ffffff; border-radius: 12px; box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);">
+    <!-- Header -->
+    <div style="padding: 30px; text-align: center; border-bottom: 1px solid #eaeaea;">
+      <div style="width: 70px; height: 70px; margin: 0 auto 15px; background-color: #f3f4f6; border-radius: 50%; display: flex; align-items: center; justify-content: center;">
+        <span style="font-size: 32px;">📄</span>
+      </div>
+      <h1 style="margin: 0; font-size: 24px; font-weight: 600; color: #111827;">Document Verification</h1>
+    </div>
+    
+    <!-- Content -->
+    <div style="padding: 30px 40px;">
+      <p style="font-size: 16px; margin-bottom: 25px;">Hello,</p>
+      
+      <p style="font-size: 16px; margin-bottom: 25px;">We need your verification for the following document:</p>
+      
+      <div style="background-color: #f9fafb; border-radius: 8px; padding: 20px; margin: 30px 0;">
+        <p style="font-weight: 600; font-size: 16px; color: #111827; margin: 0 0 5px 0;">${cleanFilename}</p>
+        <p style="color: #6b7280; font-size: 14px; margin: 0;">Please review this document carefully before verification.</p>
+      </div>
+      
+      <p style="font-size: 16px; margin-bottom: 30px;">This document requires your verification before it can be processed in our system.</p>
+      
+      <div style="text-align: center; margin: 40px 0;">
+        <a href="#" style="display: inline-block; background-color: #2563eb; color: white; text-decoration: none; padding: 12px 28px; border-radius: 6px; font-weight: 500; font-size: 16px;">Verify Document</a>
+      </div>
+      
+      <p style="font-size: 14px; color: #6b7280; margin-top: 40px; border-top: 1px solid #eaeaea; padding-top: 20px;">
+        If you did not request this verification, please disregard this email.
+      </p>
+    </div>
+    
+    <!-- Footer -->
+    <div style="background-color: #f9fafb; padding: 20px; text-align: center; border-radius: 0 0 12px 12px; border-top: 1px solid #eaeaea;">
+      <p style="color: #6b7280; font-size: 12px; margin: 0;">© 2025 AI Document Management System</p>
+      <p style="color: #6b7280; font-size: 12px; margin-top: 5px;">This email was sent to ${email}</p>
+    </div>
+  </div>
+</body>
+</html>
+`;
 
       console.log("Sending email to:", email);
       console.log("Subject:", subject);
@@ -405,6 +439,7 @@ This is an automated message. Please do not reply to this email.
   };
 
   return (
+    <>
     <div className="min-h-screen bg-background">
       <div className="container mx-auto px-4 py-8 max-w-6xl">
         <div className="text-center mb-8">
@@ -766,6 +801,7 @@ This is an automated message. Please do not reply to this email.
         </div>
       </div>
     </div>
+    </>
   );
 };
 
