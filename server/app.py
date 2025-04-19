@@ -52,7 +52,7 @@ def add_document():
         storage_path = os.path.join(STORAGE_FOLDER, storage_filename)
 
         # Move file to permanent storage
-        os.rename(temp_path, storage_path)
+        shutil.move(temp_path, storage_path)
 
         # Save to database with NULL hash initially
         try:
@@ -239,7 +239,6 @@ def redact_pdfs():
     # Handle form data instead of JSON
     method = request.form.get('method', 'full_redact')
     replace_text = request.form.get('replace_text', '[REDACTED]')
-    email = request.form.get('email')
 
     # Create a unique session ID for this batch
     session_id = str(uuid.uuid4())

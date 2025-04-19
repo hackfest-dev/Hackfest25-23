@@ -16,6 +16,8 @@ services:
       POSTGRES_USER: postgres
       POSTGRES_PASSWORD: postgres
       POSTGRES_DB: mydatabase
+    volumes:
+      - ./server/document_storage:/app/document_storage
 
   client:
     build:
