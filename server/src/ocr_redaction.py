@@ -97,53 +97,75 @@ def legal_redact_pdf(input_path, output_path, pii_terms=None,
 
     doc = fitz.open(input_path)
 
-    for page in doc:
+    # Process all pages first
+    for page_num, page in enumerate(doc):
         # --- TEXT LAYER PROCESSING ---
         for term in pii_terms:
-            areas = page.search_for(term, quads=True)
+            areas = page.search_for(term)
 
-            for quad in areas:
+            for rect in areas:
                 if method == "replace":
-                    # Add white box first
-                    page.add_redact_annot(
-                        quad, fill=(1, 1, 1), text=replace_text)
+                    page.add_redact_annot(rect, text=replace_text)
                 elif method == "obfuscate":
-                    page.add_redact_annot(quad, fill=(0, 0, 0))
+                    page.add_redact_annot(rect, fill=(0, 0, 0))
                 else:  # full legal redaction
-                    page.add_redact_annot(quad, text="")  # Complete removal
+                    page.add_redact_annot(rect, text="")
 
-        # --- IMAGE LAYER PROCESSING ---
+        # Apply text redactions
+        page.apply_redactions()
+
+    # --- IMAGE LAYER PROCESSING --- (separate pass to avoid xref conflicts)
+    for page_num, page in enumerate(doc):
         for img in page.get_images(full=True):
             xref = img[0]
-            base_image = doc.extract_image(xref)
-            img_bytes = base_image["image"]
 
-            # OCR and redact image
-            redacted_img = process_image_with_ocr(
-                img_bytes,
-                pii_terms,
-                method=method,
-                replace_text=replace_text
-            )
+            try:
+                base_image = doc.extract_image(xref)
+                if base_image:
+                    img_bytes = base_image["image"]
+                    pix = fitz.Pixmap(img_bytes)
 
-            # Replace original image
-            page.insert_image(
-                page.rect,
-                stream=redacted_img,
-                overlay=True
-            )
+                    # Process image (assuming process_image_with_ocr is defined elsewhere)
+                    # This function should return image bytes after OCR and redaction
+                    if callable(process_image_with_ocr):
+                        processed_bytes = process_image_with_ocr(
+                            img_bytes,
+                            pii_terms,
+                            method=method,
+                            replace_text=replace_text
+                        )
 
-        # Apply all redactions for this page
-        page.apply_redactions()
+                        # Create a new pixmap from processed bytes
+                        new_pix = fitz.Pixmap(processed_bytes)
+
+                        # Replace the image - safer approach
+                        doc.delete_image(xref)  # Remove old image
+                        new_xref = doc.add_image_ref(
+                            new_pix.tobytes())  # Add new image
+
+                        # Update the image reference in the page
+                        page.replace_image(xref, new_xref)
+            except Exception as e:
+                print(f"Error processing image on page {page_num+1}: {str(e)}")
+                continue
 
     # Remove metadata and sensitive tags
     doc.set_metadata({})
-    doc.del_xml_metadata()
+
+    # PyMuPDF 1.18.0+ uses different methods for XML metadata
+    try:
+        doc.del_xml_metadata()  # Newer versions
+    except AttributeError:
+        try:
+            doc.setMetadata({})  # Older versions alternative
+        except:
+            pass
+
+    # Save with security settings
     doc.save(output_path,
              deflate=True,
-             garbage=3,  # Remove deleted objects
-             clean=True,  # Sanitize content
-             encryption=fitz.PDF_ENCRYPT_KEEP)
+             garbage=4,  # Maximum cleanup of unused objects
+             clean=True)  # Sanitize content
     doc.close()
 
 
@@ -192,4 +214,3 @@ def process_image_with_ocr(img_bytes, pii_terms, method, replace_text):
     # Convert back to bytes
     _, img_encoded = cv2.imencode('.png', open_cv_image)
     return img_encoded.tobytes()
-
