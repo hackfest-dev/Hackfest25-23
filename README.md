@@ -109,6 +109,10 @@ The frontend is built with React, TypeScript, and Vite, featuring a modern compo
 ### Prerequisites
 - Docker
 - Docker Compose
+- Ollama
+
+### Exposing Ollama
+Ollama running with llama3.2:latest default model.
 
 ### Running with Docker
 
