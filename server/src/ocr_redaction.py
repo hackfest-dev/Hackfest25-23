@@ -192,3 +192,4 @@ def process_image_with_ocr(img_bytes, pii_terms, method, replace_text):
     # Convert back to bytes
     _, img_encoded = cv2.imencode('.png', open_cv_image)
     return img_encoded.tobytes()
+
