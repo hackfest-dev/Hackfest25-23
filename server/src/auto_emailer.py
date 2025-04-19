@@ -1,6 +1,6 @@
 import yagmail
 
-def send_email(to_email, subject, html_content):
+def send_email(to_email):
     """
     Sends an email using Yagmail.
 
@@ -13,7 +13,7 @@ def send_email(to_email, subject, html_content):
         # Initializing the server connection
         yag = yagmail.SMTP(user='redactly.ai@gmail.com', password='dmzhqlwrqeuuianr')
         # Sending the email
-        yag.send(to=to_email, subject=subject, contents=html_content)
+        yag.send(to=to_email, subject="Verify Access to Medical Records", contents="Kindly review and verify the redacted document before it is shared for research")
         return {"status": "success", "message": "Email sent successfully"}
     except Exception as e:
         return {"status": "error", "message": f"Error sending email: {str(e)}"}
