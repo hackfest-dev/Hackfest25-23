@@ -7,6 +7,7 @@ RUN apt-get update && \
     apt-get install -y --no-install-recommends \
     tesseract-ocr \
     libtesseract-dev \
+    libpq-dev \
     build-essential \
     gcc \
     g++ \
